@@ -35,6 +35,20 @@ if (LINE.includes("\n") || LINE.includes("\r")) {
   process.exit(1);
 }
 
+// Reviser gate (second session): the newline check above only catches
+// \n and \r. Reject every other invisible character too — C0/C1 control
+// chars (e.g. tab, NUL) and zero-width/format chars (U+200B, U+200C,
+// U+200D, U+FEFF, U+00AD). One smuggled into the line would be invisible
+// to a human reader yet change what the sealed scorer actually grades,
+// so fail loudly instead of shipping a line that is not what it looks like.
+if (/[\u0000-\u001F\u007F\u0080-\u009F\u200B\u200C\u200D\uFEFF\u00AD]/u.test(LINE)) {
+  console.error(
+    "gate failed: line contains invisible control/format characters",
+  );
+
+  process.exit(1);
+}
+
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", LINE, "utf8");
 
